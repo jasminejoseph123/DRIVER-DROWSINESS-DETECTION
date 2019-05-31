@@ -1,0 +1,199 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using WebcamSecurity.Serial;
+using System.IO;
+using System.Speech.Synthesis;
+
+
+using System.Web;
+
+using System.IO;
+
+using System.Net;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using System.Data.SqlClient;
+
+namespace WebcamSecurity
+{
+    public partial class Serialnew : Form
+    {       
+        SerialPortManager _spManager;
+        public static string user;
+        public Serialnew()
+        {
+            InitializeComponent();
+
+            UserInitialization();
+        }
+
+      
+        private void UserInitialization()
+        {
+            _spManager = new SerialPortManager();
+            SerialSettings mySerialSettings = _spManager.CurrentSerialSettings;
+            serialSettingsBindingSource.DataSource = mySerialSettings;
+            portNameComboBox.DataSource = mySerialSettings.PortNameCollection;
+            baudRateComboBox.DataSource = mySerialSettings.BaudRateCollection;
+            dataBitsComboBox.DataSource = mySerialSettings.DataBitsCollection;
+            parityComboBox.DataSource = Enum.GetValues(typeof(System.IO.Ports.Parity));
+            stopBitsComboBox.DataSource = Enum.GetValues(typeof(System.IO.Ports.StopBits));
+
+            _spManager.NewSerialDataRecieved += new EventHandler<SerialDataEventArgs>(_spManager_NewSerialDataRecieved);
+            this.FormClosing += new FormClosingEventHandler(MainForm_FormClosing);
+        }
+
+        
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            _spManager.Dispose();   
+        }
+
+        void _spManager_NewSerialDataRecieved(object sender, SerialDataEventArgs e)
+        {
+            String strCon = "Data Source=DESKTOP-DEL5R27;Initial Catalog=WebCam;Integrated Security=True";
+            user = Loginpage.user;
+            if (this.InvokeRequired)
+            {
+                // Using this.Invoke causes deadlock when closing serial port, and BeginInvoke is good practice anyway.
+                this.BeginInvoke(new EventHandler<SerialDataEventArgs>(_spManager_NewSerialDataRecieved), new object[] { sender, e });
+                return;
+            }
+
+            int maxTextLength = 1000; // maximum text length in text box
+            if (tbData.TextLength > maxTextLength)
+                tbData.Text = tbData.Text.Remove(0, tbData.TextLength - maxTextLength);
+
+            // This application is connected to a GPS sending ASCCI characters, so data is converted to text
+           
+            string str = Encoding.ASCII.GetString(e.Data);
+
+            //byte[] ba = Encoding.Default.GetBytes(str);
+
+            //var hexString = BitConverter.ToString(ba);
+
+
+            if (str.Contains("ys") == true)
+            {
+                if (Application.OpenForms.OfType<MainForm>().Count() == 0)
+                {
+                    MainForm a = new MainForm();
+                    a.Show();
+                }
+                   
+                SpeechSynthesizer voice = new SpeechSynthesizer();
+                voice.Volume = 100;
+                voice.Rate = -1;
+                voice.SelectVoiceByHints(VoiceGender.Female);
+
+                for (int z = 0; z <= 1; z++)
+                {
+                    voice.SpeakAsync("Baby is crying");
+                }
+            }
+            if(str.Contains("f") == true)
+            {
+                SpeechSynthesizer voice = new SpeechSynthesizer();
+                voice.Volume = 100;
+                voice.Rate = -1;
+                voice.SelectVoiceByHints(VoiceGender.Female);
+
+                for (int z = 0; z <= 1; z++)
+                {
+                    voice.SpeakAsync("Fire alert");
+                }
+            }
+            if (str.Contains("sm") == true)
+            {               
+                SpeechSynthesizer voice = new SpeechSynthesizer();
+                voice.Volume = 100;
+                voice.Rate = -1;
+                voice.SelectVoiceByHints(VoiceGender.Female);
+
+                for (int z = 0; z <= 1; z++)
+                {
+                    voice.SpeakAsync("Smoke detected");
+                }
+            }
+
+            if (str.Contains("a") == true)
+            {
+                SqlConnection con = new SqlConnection(strCon);
+                con.Open();
+                //string query = "select * from data";
+                //SqlCommand cmd = new SqlCommand(query, con);
+
+                //SqlDataReader dataReader = cmd.ExecuteReader();
+
+                //while (dataReader.Read())
+                //{
+                //    MessageBox.Show(dataReader["User"].ToString());
+                //}
+
+                string query = "INSERT INTO data (UserName,Message)VALUES('"+Loginpage.user+"', 'Drunk driver detected')";
+
+                SqlCommand myCommand = new SqlCommand(query, con);
+
+                myCommand.ExecuteNonQuery();
+                //dataReader.Close();              
+
+                con.Close();
+
+                SpeechSynthesizer voice = new SpeechSynthesizer();
+                voice.Volume = 100;
+                voice.Rate = -1;
+                voice.SelectVoiceByHints(VoiceGender.Female);
+
+                for (int z = 0; z <= 1; z++)
+                {
+                    voice.SpeakAsync("Alcoholic driver detected");
+                }
+            }
+
+
+            tbData.AppendText(str);
+            tbData.ScrollToCaret();
+
+        }
+
+        public static string GetResponse(string sURL)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sURL);
+            request.MaximumAutomaticRedirections = 4;
+            request.Credentials = CredentialCache.DefaultCredentials;
+            try
+            {
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                Stream receiveStream = response.GetResponseStream();
+                StreamReader readStream = new StreamReader(receiveStream, Encoding.UTF8);
+                string sResponse = readStream.ReadToEnd();
+                response.Close();
+                readStream.Close();
+                return "SMS Sent Successfully";
+            }
+            catch
+            {
+                return "SMS NOT SENT";
+            }
+
+        }
+
+        // Handles the "Start Listening"-buttom click event
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            _spManager.StartListening();
+        }
+
+        // Handles the "Stop Listening"-buttom click event
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            _spManager.StopListening();
+        }
+    }
+}
