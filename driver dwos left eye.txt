@@ -1,0 +1,114 @@
+public Bitmap left_eye(Bitmap b)
+{
+
+b = black_white(b);
+int i, j, max, x, h, w, y;
+max = 0;
+x = 0;
+
+h = b.Height;
+w = b.Width;
+y = h - 1;
+for (i = 2; i &lt; 2 * h / 3; i++)
+{
+for (j = 0; j &lt; w; j++)
+{
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+break;
+}
+if (j == w)
+j = w - 1;
+if (max &lt;= j &amp;&amp; j != 0)
+{
+max = j;
+x = i;
+}
+if (i &gt;= h / 2 &amp;&amp; j &lt; w / 3)
+break;
+}
+for (i = h - 1; i &gt;= h / 2; i--)
+{
+int count = 0;
+for (j = w / 4; j &lt;= 3 * w / 4; j++)
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+count++;
+if (count * 2 &gt;= w / 2)
+break;
+}
+if (i != h - 1)
+y = i + 1;
+
+int le_1 = 0, ri_1 = w - 1, ttt = 0;
+ttt = 0;
+for (j = 0; j &lt; w; j++)
+{
+for (i = 0; i &lt; h; i++)
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+{
+ttt = 1;
+break;
+}
+if (ttt == 1)
+{
+le_1 = j;
+break;
+}
+}
+ttt = 0;
+for (j = w - 1; j &gt;= 0; j--)
+{
+for (i = 0; i &lt; h; i++)
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+{
+ttt = 1;
+break;
+}
+if (ttt == 1)
+{
+ri_1 = j;
+break;
+}
+}
+
+ttt = 0;
+for (i = x; i &lt; y; i++)
+{
+for (j = w / 4; j &lt; w - w / 4; j++)
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+{
+ttt = 1;
+break;
+}
+if (ttt == 1)
+{
+x = i;
+break;
+}
+}
+ttt = 0;
+for (i = y; i &gt;= x; i--)
+
+{
+for (j = w / 4; j &lt; w - w / 4; j++)
+if (b.GetPixel(j, i).R == 0 &amp;&amp; b.GetPixel(j, i).G == 0 &amp;&amp; b.GetPixel(j, i).B == 0)
+{
+ttt = 1;
+break;
+}
+if (ttt == 1)
+{
+y = i;
+break;
+}
+}
+
+b = new Bitmap(pictureBox3.Image);
+Bitmap BB = new Bitmap(w - le_1, h - x);
+
+for (i = le_1; i &lt; w; i++)
+for (j = x; j &lt; h; j++)
+BB.SetPixel(i - le_1, j - x, b.GetPixel(i, j));
+
+return BB;
+
+}
